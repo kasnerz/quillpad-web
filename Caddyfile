@@ -1,0 +1,20 @@
+{
+	# Plain HTTP only — TLS is terminated by the edge proxy in front, which
+	# reverse-proxies to this container.
+	auto_https off
+	admin off
+}
+
+:80 {
+	root * /srv
+	encode gzip zstd
+
+	# Never cache the entry point, so a redeploy is picked up immediately.
+	@html path / /index.html
+	header @html Cache-Control "no-cache"
+
+	# Fall back to index.html so client-side routing keeps working once the
+	# app grows past a single page.
+	try_files {path} /index.html
+	file_server
+}

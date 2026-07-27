@@ -1,0 +1,17 @@
+services:
+  quillpad-web:
+    image: caddy:2-alpine
+    container_name: quillpad-web
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./public:/srv:ro
+    networks:
+      - internal-edge
+
+# The shared network the edge proxy and the notes server also sit on, so no port
+# needs publishing. Rename it to match your own setup, or drop the networks
+# blocks and publish a port instead.
+networks:
+  internal-edge:
+    external: true

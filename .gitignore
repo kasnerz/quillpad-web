@@ -1,0 +1,11 @@
+# Host-specific deployment notes: paths, hostnames, credentials.
+DEPLOYMENT.md
+
+# Local agent/editor state.
+.claude/
+.vscode/
+.idea/
+
+.env
+*.local
+.DS_Store
