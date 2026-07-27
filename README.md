@@ -154,3 +154,13 @@ Drag-and-drop reordering writes the **whole** ordering in one
 `PUT /web/v1/order`, and merges the visible order back into the full list, so
 reordering while filtered by a search or inside Archive does not disturb notes
 that were not on screen.
+
+## License
+
+GPL-3.0-or-later, matching the server it talks to. See [LICENSE](LICENSE).
+
+Copyright (C) 2026 kasnerz
+
+The vendored files in `public/vendor/` keep their own licenses: [marked](https://github.com/markedjs/marked)
+is MIT, [DOMPurify](https://github.com/cure53/DOMPurify) is dual Apache-2.0 /
+MPL-2.0.

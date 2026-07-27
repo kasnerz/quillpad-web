@@ -135,10 +135,10 @@ document.getElementById("composer-list").addEventListener("click", (event) => {
   editor.openNote(null, { noteType: "list" });
 });
 
-for (const button of document.querySelectorAll(".nav-item")) {
+for (const button of document.querySelectorAll(".view-tab")) {
   button.addEventListener("click", () => {
     view = button.dataset.view;
-    for (const other of document.querySelectorAll(".nav-item")) {
+    for (const other of document.querySelectorAll(".view-tab")) {
       other.classList.toggle("active", other === button);
     }
     render();
@@ -148,11 +148,6 @@ for (const button of document.querySelectorAll(".nav-item")) {
 document.getElementById("search-input").addEventListener("input", (event) => {
   query = event.target.value;
   render();
-});
-
-document.getElementById("nav-toggle").addEventListener("click", () => {
-  document.getElementById("sidebar").classList.toggle("collapsed");
-  requestAnimationFrame(relayout);
 });
 
 editor.setOnClosed(render);
