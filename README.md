@@ -2,7 +2,7 @@
 
 A Google Keep-style web UI for the notes that the
 [Quillpad](https://github.com/quillpad/quillpad) Android app syncs to a
-self-hosted [quillnote-server](https://github.com/arunk140/quillnote-server) —
+self-hosted [quillnote-server](https://github.com/kasnerz/quillnote-server) —
 a small Nextcloud Notes API emulator.
 
 Coloured rounded cards in a masonry grid, drag to reorder, pinning, archive,
@@ -42,8 +42,7 @@ The stock Nextcloud Notes endpoints, same-origin:
 | `PUT` | `/index.php/apps/notes/api/v1/notes/{id}` | partial update (patch semantics, not replace) |
 | `DELETE` | `/index.php/apps/notes/api/v1/notes/{id}` | delete |
 
-Plus two endpoints that are **not** part of the Notes API and that stock
-quillnote-server does not implement yet:
+Plus two endpoints that are **not** part of the Notes API:
 
 | Method | Path | Used for |
 | --- | --- | --- |
@@ -63,10 +62,17 @@ Every write carries a `X-Client-Id` header, echoed back as `origin` on the SSE
 event it causes, so a client can ignore the echo of its own change and not
 re-render the grid out from under someone who is typing.
 
-So: **this needs a patched quillnote-server.** The web app is the part published
-here.
+Upstream [arunk140/quillnote-server](https://github.com/arunk140/quillnote-server)
+implements none of that, so this app needs the fork that does:
+**[kasnerz/quillnote-server](https://github.com/kasnerz/quillnote-server)**. It
+speaks the same Nextcloud Notes API to the phone, so Quillpad syncs against it
+unchanged.
 
 ## Running it
+
+You need three pieces: this app, [the server
+fork](https://github.com/kasnerz/quillnote-server), and a reverse proxy that
+puts them on one origin.
 
 `docker compose up -d` serves `public/` on port 80 of the `quillpad-web`
 container. There is no published port by design — see below. Point it wherever
