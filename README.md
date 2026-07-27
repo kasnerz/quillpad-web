@@ -159,7 +159,7 @@ that were not on screen.
 
 GPL-3.0-or-later, matching the server it talks to. See [LICENSE](LICENSE).
 
-Copyright (C) 2026 kasnerz
+Copyright (C) 2026 Zdeněk Kasner.
 
 The vendored files in `public/vendor/` keep their own licenses: [marked](https://github.com/markedjs/marked)
 is MIT, [DOMPurify](https://github.com/cure53/DOMPurify) is dual Apache-2.0 /
