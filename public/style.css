@@ -88,17 +88,17 @@
  * Fonts                                                               *
  * ------------------------------------------------------------------ */
 
-/* Caveat, SIL Open Font License 1.1 — see fonts/OFL.txt. Self-hosted for the
-   same reason marked and purify are vendored: the app is meant to work on a
-   LAN with no route to a CDN. Only the latin subset and the one weight the
-   wordmark uses are shipped; `swap` means the header renders in the fallback
+/* Birthstone, SIL Open Font License 1.1 — see fonts/OFL-birthstone.txt.
+   Self-hosted for the same reason marked and purify are vendored: the app is
+   meant to work on a LAN with no route to a CDN. Only the latin subset and the
+   one weight it ships are here; `swap` means the header renders in the fallback
    first rather than sitting blank. */
 @font-face {
-  font-family: "Caveat";
+  font-family: "Birthstone";
   font-style: normal;
-  font-weight: 600;
+  font-weight: 400;
   font-display: swap;
-  src: url("fonts/caveat-600-latin.woff2") format("woff2");
+  src: url("fonts/birthstone-400-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
@@ -180,20 +180,25 @@ svg {
   color: var(--text);
 }
 
-/* Caveat runs small and sits high for its em size, so the wordmark is set
-   larger than the 20px it replaces and its box trimmed to the glyphs with
-   line-height, which is what lets `align-items: center` on .brand-link put the
-   x-height — not the ascent — beside the icon. */
+/* A pointed-pen script spends most of its em on ascenders and descenders, so
+   its letters come out far smaller than a sans at the same font-size —
+   Birthstone needs roughly double to read at the 20px the wordmark used to be.
+   line-height: 1 trims the box back to the em, which is what lets
+   `align-items: center` on .brand-link put the x-height, rather than the top of
+   the ascenders, beside the icon. */
 .brand-name {
-  font-family: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+  font-family: "Birthstone", "Segoe Script", "Brush Script MT", cursive;
   font-size: 30px;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0;
-  /* Caveat's ascenders overshoot its descenders, so centring the box leaves the
-     word riding high. A transform rather than padding or `top`, so the nudge is
-     purely visual and the bar's height still comes from the 30px icon. */
-  transform: translateY(2px);
+  /* The Q's entry stroke starts left of its origin and would otherwise crowd
+     the icon; its descenders hang well below the em box, so the word also needs
+     lifting to sit optically centred. Margin for the first, transform for the
+     second — the transform stays out of layout, so the bar's height still comes
+     from the 30px icon rather than from a 40px line. */
+  margin-left: 3px;
+  transform: translateY(0px);
 }
 
 /* Icon and wordmark are one link home. The padding gives the hover plate room
