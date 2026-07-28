@@ -8,6 +8,8 @@
 // Dragging uses Pointer Events rather than HTML5 drag-and-drop so that mouse
 // and touch take the same path and the drag image is the real card.
 
+import { uiScale } from "./zoom.js";
+
 const GAP = 16;
 const MIN_COLUMN = 240;
 const DRAG_THRESHOLD = 5;
@@ -20,6 +22,9 @@ export class MasonryGrid {
     this.rects = []; // laid-out geometry, index-aligned with items
     this.pending = null;
     this.drag = null;
+    // Set for views that have no manual order to rearrange — the trash, where
+    // cards are ordered by when they were thrown away.
+    this.locked = false;
 
     this.el.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     // Bound on window so a fast drag that outruns the cursor still tracks.
@@ -81,7 +86,7 @@ export class MasonryGrid {
   }
 
   onPointerDown(event) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || this.locked) return;
 
     const cardEl = event.target.closest(".card");
     if (!cardEl || !this.el.contains(cardEl)) return;
@@ -108,9 +113,12 @@ export class MasonryGrid {
 
     event.preventDefault();
 
+    // Pointer coordinates are client px and the transform below is written in
+    // the grid's own px, so the zoom has to come out in between. See js/zoom.js.
     const gridRect = this.el.getBoundingClientRect();
-    const x = event.clientX - gridRect.left - this.drag.offsetX;
-    const y = event.clientY - gridRect.top - this.drag.offsetY;
+    const { scale } = this.drag;
+    const x = (event.clientX - gridRect.left) / scale - this.drag.offsetX;
+    const y = (event.clientY - gridRect.top) / scale - this.drag.offsetY;
     this.drag.item.el.style.transform = `translate(${x}px, ${y}px) scale(1.02)`;
 
     const centre = {
@@ -148,13 +156,17 @@ export class MasonryGrid {
     if (!item || !rect) return;
 
     const gridRect = this.el.getBoundingClientRect();
+    // Measured once here rather than on every move: the zoom cannot change
+    // mid-drag, and this costs a layout read.
+    const scale = uiScale();
     this.drag = {
       item,
       index,
+      scale,
       width: rect.w,
       height: rect.h,
-      offsetX: event.clientX - gridRect.left - rect.x,
-      offsetY: event.clientY - gridRect.top - rect.y,
+      offsetX: (event.clientX - gridRect.left) / scale - rect.x,
+      offsetY: (event.clientY - gridRect.top) / scale - rect.y,
     };
 
     item.el.classList.add("is-dragging");

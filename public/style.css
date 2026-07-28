@@ -2,7 +2,18 @@
  * Theme                                                               *
  * ------------------------------------------------------------------ */
 
+/* Light is the base; the dark set overrides it under [data-theme="dark"], which
+   js/theme.js resolves from the stored choice (or the OS, when that choice is
+   "system") and writes onto <html> before the first paint. Keying off an
+   attribute rather than a `prefers-color-scheme` media query is what lets an
+   explicit Light or Dark win against the OS setting. */
 :root {
+  color-scheme: light;
+
+  /* Every length below is in px, so one scale on <body> enlarges the whole
+     interface at once. 1.1 is what a browser shows at 110% zoom. */
+  --ui-zoom: 1.08;
+
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #f1f3f4;
@@ -10,7 +21,8 @@
   --text-dim: #5f6368;
   --border: #dadce0;
   --border-soft: #e8eaed;
-  --accent: #546524;          /* Quillpad's primary */
+  --accent: #546524;
+  /* Quillpad's primary */
   --shadow: 0 1px 2px rgba(60, 64, 67, .2), 0 2px 6px rgba(60, 64, 67, .1);
   --shadow-lift: 0 2px 6px rgba(60, 64, 67, .25), 0 8px 20px rgba(60, 64, 67, .18);
 
@@ -30,39 +42,51 @@
   --note-gray: #e3e5e8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #202124;
-    --surface: #202124;
-    --surface-2: #2d2e31;
-    --text: #e8eaed;
-    --text-dim: #9aa0a6;
-    --border: #5f6368;
-    --border-soft: #3c4043;
-    --accent: #bbcf81;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3);
-    --shadow-lift: 0 2px 6px rgba(0, 0, 0, .6), 0 8px 20px rgba(0, 0, 0, .4);
+:root[data-theme="dark"] {
+  color-scheme: dark;
 
-    --note-default: #202124;
-    --note-red: #5c2b29;
-    --note-orange: #614a19;
-    --note-yellow: #635d19;
-    --note-green: #345920;
-    --note-teal: #16504b;
-    --note-cyan: #2d555e;
-    --note-blue: #1e3a5f;
-    --note-purple: #42275e;
-    --note-pink: #5b2245;
-    --note-brown: #442f19;
-    --note-gray: #3c3f43;
-  }
+  --bg: #202124;
+  --surface: #202124;
+  --surface-2: #2d2e31;
+  --text: #e8eaed;
+  --text-dim: #9aa0a6;
+  --border: #5f6368;
+  --border-soft: #3c4043;
+  --accent: #bbcf81;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, .6), 0 8px 20px rgba(0, 0, 0, .4);
+
+  --note-default: #202124;
+  --note-red: #5c2b29;
+  --note-orange: #614a19;
+  --note-yellow: #635d19;
+  --note-green: #345920;
+  --note-teal: #16504b;
+  --note-cyan: #2d555e;
+  --note-blue: #1e3a5f;
+  --note-purple: #42275e;
+  --note-pink: #5b2245;
+  --note-brown: #442f19;
+  --note-gray: #3c3f43;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body { height: 100%; }
+/* Only <html> — a `height: 100%` on the zoomed body would resolve to the full
+   viewport and then be scaled past it, leaving a scrollbar on an empty page.
+   Nothing needs it there: body's background is propagated to the canvas, so it
+   still paints the whole window. */
+html {
+  height: 100%;
+}
 
 body {
+  /* Reflows rather than magnifying: text rewraps and the masonry recounts its
+     columns, exactly as it would under browser zoom. js/zoom.js explains what
+     this costs the pointer maths. */
+  zoom: var(--ui-zoom);
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 14px;
@@ -71,7 +95,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-[hidden] { display: none !important; }
+[hidden] {
+  display: none !important;
+}
 
 svg {
   width: 20px;
@@ -87,41 +113,83 @@ svg {
  * Top bar                                                             *
  * ------------------------------------------------------------------ */
 
-/* Top bar and view bar stick together as one block, so the view bar needs no
-   hardcoded offset for the height of the bar above it. */
-.chrome {
+/* The bar's background and rule run the full width of the window; its contents
+   are held to the same centred column as the notes, so the brand and the first
+   grid column start at the same x. */
+.topbar {
   position: sticky;
   top: 0;
   z-index: 20;
   background: var(--bg);
+  border-bottom: 1px solid var(--border-soft);
 }
 
-.topbar {
-  display: flex;
+/* Three tracks rather than a flex row: the equal side columns are what keeps
+   the view switch on the centre line of the page, independent of how wide the
+   brand and the search happen to be. minmax(0, …) so the search may shrink
+   below its natural width on a narrow window. */
+.topbar-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  padding: 8px 20px;
+  padding: 8px 16px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 20px 0 0;
+  margin: 0;
   font-size: 20px;
   font-weight: 500;
   letter-spacing: -.01em;
   color: var(--text);
 }
 
+/* Icon and wordmark are one link home. The padding gives the hover plate room
+   to breathe and is cancelled by an equal negative margin, so the icon still
+   lines up with the first grid column — at any top bar padding, since the two
+   cancel out rather than assuming a particular one. */
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: -8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-link:hover {
+  background: var(--surface-2);
+}
+
+.brand-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 /* The icon carries its own dark plate and rounded corners, so it needs no
    theming and sits on either background unchanged. */
-.brand-logo { flex: 0 0 auto; }
+.brand-logo {
+  flex: 0 0 auto;
+}
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* Only as wide as it needs to be — the view switch sits in the space it used
+   to take. */
 .search {
   position: relative;
-  flex: 1;
-  max-width: 720px;
+  flex: 0 1 280px;
+  min-width: 0;
 }
 
 .search svg {
@@ -134,12 +202,12 @@ svg {
 
 .search input {
   width: 100%;
-  padding: 11px 16px 11px 44px;
+  padding: 9px 14px 9px 40px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--surface-2);
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
   font-family: inherit;
 }
 
@@ -150,10 +218,9 @@ svg {
   box-shadow: var(--shadow);
 }
 
-.topbar-right { margin-left: auto; display: flex; align-items: center; }
-
 /* Quietly reports whether the live event stream is connected. */
 .sync-dot {
+  flex: 0 0 auto;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -162,36 +229,42 @@ svg {
   transition: background .3s, opacity .3s;
 }
 
-.sync-dot.live { background: #34a853; opacity: .9; }
-.sync-dot.stale { background: #f9ab00; opacity: .9; }
+.sync-dot.live {
+  background: #34a853;
+  opacity: .9;
+}
+
+.sync-dot.stale {
+  background: #f9ab00;
+  opacity: .9;
+}
 
 /* ------------------------------------------------------------------ *
  * Layout                                                              *
  * ------------------------------------------------------------------ */
 
-/* Everything below the top bar lives in one centred column, wide enough for
-   four masonry columns (see MIN_COLUMN in js/layout.js) and no wider. */
-.viewbar-inner,
+/* One centred column, wide enough for four masonry columns (see MIN_COLUMN in
+   js/layout.js) and no wider. */
+.topbar-inner,
 .main {
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
 }
 
-.viewbar {
-  border-bottom: 1px solid var(--border-soft);
-  padding: 0 16px;
+.views {
+  display: flex;
+  gap: 2px;
+  justify-self: center;
 }
-
-.viewbar-inner { display: flex; gap: 4px; }
 
 .view-tab {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 14px;
+  padding: 7px 14px;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-radius: 6px;
   background: none;
   color: var(--text-dim);
   font: inherit;
@@ -200,16 +273,26 @@ svg {
   white-space: nowrap;
 }
 
-.view-tab svg { width: 18px; height: 18px; }
-.view-tab:hover { color: var(--text); }
-
-.view-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  font-weight: 500;
+.view-tab svg {
+  width: 18px;
+  height: 18px;
 }
 
-.main { padding: 24px 16px 80px; }
+.view-tab:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* The tint and the colour carry the state; bolding the label too would shift
+   the neighbouring tab sideways on every switch. */
+.view-tab.active {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--text);
+}
+
+.main {
+  padding: 24px 16px 80px;
+}
 
 /* ------------------------------------------------------------------ *
  * Composer                                                            *
@@ -220,25 +303,83 @@ svg {
   align-items: center;
   max-width: 600px;
   margin: 0 auto 32px;
-  padding: 12px 16px;
+  padding: 8px 16px;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--surface);
   box-shadow: var(--shadow);
   color: var(--text-dim);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   cursor: text;
 }
 
-.composer span { flex: 1; }
-.composer-actions { display: flex; gap: 4px; }
+/* The button, not the text, is what sets the bar's height — at the default 32px
+   it is taller than the line it sits beside, so trimming the padding alone
+   would not bring the bar down. */
+.composer .icon-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.composer span {
+  flex: 1;
+}
+
+.composer-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Trash                                                               *
+ * ------------------------------------------------------------------ */
+
+/* Sits where the composer sits in the other views, so switching to the trash
+   swaps one band for another instead of jolting the grid upwards. */
+.trash-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto 32px;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 13.5px;
+}
+
+/* Trashed notes cannot be edited, so their two actions are the whole point of
+   the card and do not wait for a hover the way a live note's do. */
+.card.trashed .card-actions {
+  opacity: 1;
+}
+
+.card.trashed .card-body,
+.card.trashed .card-title {
+  opacity: .75;
+}
+
+.card.trashed .check-box {
+  cursor: default;
+}
+
+.card-meta {
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  color: var(--text-dim);
+}
 
 /* ------------------------------------------------------------------ *
  * Grid + cards                                                        *
  * ------------------------------------------------------------------ */
 
-.section { margin-bottom: 24px; }
+.section {
+  margin-bottom: 24px;
+}
 
 .section-label {
   margin: 0 0 10px 8px;
@@ -252,7 +393,10 @@ svg {
 /* Cards are absolutely positioned by js/layout.js. CSS columns would flow
    them top-to-bottom then across, so a card's visual slot would not map to
    its index — which makes drag-reordering unimplementable. */
-.grid { position: relative; width: 100%; }
+.grid {
+  position: relative;
+  width: 100%;
+}
 
 .card {
   position: absolute;
@@ -263,24 +407,33 @@ svg {
   gap: 8px;
   padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 6px;
   background: var(--note-default);
   cursor: default;
   will-change: transform;
   transition: box-shadow .15s ease, transform .22s cubic-bezier(.2, 0, .2, 1);
 }
 
-.card:hover { box-shadow: var(--shadow); }
+.card:hover {
+  box-shadow: var(--shadow);
+}
 
-.card:hover .card-actions { opacity: 1; }
+.card:hover .card-actions {
+  opacity: 1;
+}
 
 /* Cards are positioned the moment they are built, so the very first placement
    must not animate in from the top-left corner. */
-.grid.no-anim .card { transition: none !important; }
+.grid.no-anim .card {
+  transition: none !important;
+}
 
 /* Suppressed while a drag is in flight so cards glide instead of teleporting,
    and so the dragged card tracks the pointer with no lag. */
-.grid.dragging .card { transition: transform .22s cubic-bezier(.2, 0, .2, 1); }
+.grid.dragging .card {
+  transition: transform .22s cubic-bezier(.2, 0, .2, 1);
+}
+
 .card.is-dragging {
   transition: none;
   z-index: 10;
@@ -304,34 +457,65 @@ svg {
   max-height: 320px;
 }
 
-.card-body.plain { white-space: pre-wrap; }
+.card-body.plain {
+  white-space: pre-wrap;
+}
 
-.card-body p:first-child { margin-top: 0; }
-.card-body p:last-child { margin-bottom: 0; }
-.card-body h1, .card-body h2, .card-body h3 { font-size: 15px; margin: .4em 0; }
-.card-body ul, .card-body ol { padding-left: 20px; margin: .4em 0; }
+.card-body p:first-child {
+  margin-top: 0;
+}
+
+.card-body p:last-child {
+  margin-bottom: 0;
+}
+
+.card-body h1,
+.card-body h2,
+.card-body h3 {
+  font-size: 15px;
+  margin: .4em 0;
+}
+
+.card-body ul,
+.card-body ol {
+  padding-left: 20px;
+  margin: .4em 0;
+}
+
 .card-body code {
   background: color-mix(in srgb, var(--text) 10%, transparent);
   padding: 1px 4px;
   border-radius: 4px;
   font-size: .92em;
 }
+
 .card-body pre {
   background: color-mix(in srgb, var(--text) 8%, transparent);
   padding: 8px 10px;
   border-radius: 6px;
   overflow-x: auto;
 }
+
 .card-body blockquote {
   margin: .4em 0;
   padding-left: 10px;
   border-left: 3px solid var(--border);
   color: var(--text-dim);
 }
-.card-body a { color: inherit; }
-.card-body img { max-width: 100%; height: auto; }
 
-.card-empty { color: var(--text-dim); font-style: italic; }
+.card-body a {
+  color: inherit;
+}
+
+.card-body img {
+  max-width: 100%;
+  height: auto;
+}
+
+.card-empty {
+  color: var(--text-dim);
+  font-style: italic;
+}
 
 /* Checklist preview on the card itself — ticking here saves immediately,
    the way Keep behaves. */
@@ -342,6 +526,13 @@ svg {
   padding: 2px 0;
   font-size: 13.5px;
   line-height: 1.45;
+}
+
+/* Cards only. A card is read at a glance, so its items want more air between
+   them than the editor's, where the rows are being typed into and a tighter
+   list keeps more of it in view. */
+.card .check-row {
+  padding: 5px 0;
 }
 
 .check-box {
@@ -359,11 +550,32 @@ svg {
   color: var(--text-dim);
 }
 
-.check-box svg { width: 12px; height: 12px; stroke-width: 2.6; opacity: 0; }
-.check-row.done .check-box svg { opacity: 1; }
-.check-row.done .check-text { text-decoration: line-through; color: var(--text-dim); }
-.check-text { word-break: break-word; white-space: pre-wrap; }
-.check-more { font-size: 12.5px; color: var(--text-dim); padding-top: 2px; }
+.check-box svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.6;
+  opacity: 0;
+}
+
+.check-row.done .check-box svg {
+  opacity: 1;
+}
+
+.check-row.done .check-text {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
+
+.check-text {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.check-more {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  padding-top: 2px;
+}
 
 .card-actions {
   display: flex;
@@ -373,7 +585,9 @@ svg {
   transition: opacity .15s;
 }
 
-.card.pinned .card-pin { opacity: 1; }
+.card.pinned .card-pin {
+  opacity: 1;
+}
 
 /* ------------------------------------------------------------------ *
  * Buttons                                                             *
@@ -393,9 +607,18 @@ svg {
   flex: 0 0 auto;
 }
 
-.icon-btn:hover { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
-.icon-btn.active { color: var(--accent); }
-.icon-btn.danger:hover { color: #d93025; }
+.icon-btn:hover {
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  color: var(--text);
+}
+
+.icon-btn.active {
+  color: var(--accent);
+}
+
+.icon-btn.danger:hover {
+  color: #d93025;
+}
 
 .text-btn {
   border: none;
@@ -408,7 +631,15 @@ svg {
   cursor: pointer;
 }
 
-.text-btn:hover { background: color-mix(in srgb, var(--text) 12%, transparent); }
+.text-btn:hover {
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+.text-btn.danger {
+  color: #d93025;
+  font-size: 13.5px;
+  padding: 6px 12px;
+}
 
 /* ------------------------------------------------------------------ *
  * Colour palette                                                      *
@@ -441,10 +672,25 @@ svg {
   color: var(--text);
 }
 
-.swatch svg { width: 14px; height: 14px; stroke-width: 2.4; opacity: 0; }
-.swatch.selected { border-color: var(--accent); border-width: 2px; }
-.swatch.selected svg { opacity: 1; }
-.swatch:hover { transform: scale(1.1); }
+.swatch svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+  opacity: 0;
+}
+
+.swatch.selected {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.swatch.selected svg {
+  opacity: 1;
+}
+
+.swatch:hover {
+  transform: scale(1.1);
+}
 
 /* ------------------------------------------------------------------ *
  * Editor                                                              *
@@ -468,7 +714,7 @@ svg {
   width: 100%;
   max-width: 600px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 6px;
   background: var(--note-default);
   box-shadow: var(--shadow-lift);
   overflow: hidden;
@@ -484,23 +730,44 @@ svg {
   padding: 14px 18px 4px;
 }
 
-.editor-title { font-size: 16px; font-weight: 500; }
+.editor-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+
 .editor-content {
   font-size: 14px;
   line-height: 1.55;
   resize: none;
   min-height: 120px;
-  overflow: hidden;   /* height is driven by content, see editor.js */
+  overflow: hidden;
+  /* height is driven by content, see editor.js */
   padding-bottom: 12px;
 }
 
-.editor-title:focus, .editor-content:focus { outline: none; }
-.editor-title::placeholder, .editor-content::placeholder { color: var(--text-dim); }
+.editor-title:focus,
+.editor-content:focus {
+  outline: none;
+}
 
-.editor-list { padding: 4px 8px 0; }
+.editor-title::placeholder,
+.editor-content::placeholder {
+  color: var(--text-dim);
+}
 
-.editor-list .check-row { padding: 3px 8px; border-radius: 6px; align-items: center; }
-.editor-list .check-row:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+.editor-list {
+  padding: 4px 8px 0;
+}
+
+.editor-list .check-row {
+  padding: 3px 8px;
+  border-radius: 6px;
+  align-items: center;
+}
+
+.editor-list .check-row:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
 
 .list-input {
   flex: 1;
@@ -512,8 +779,14 @@ svg {
   padding: 2px 0;
 }
 
-.list-input:focus { outline: none; }
-.check-row.done .list-input { text-decoration: line-through; color: var(--text-dim); }
+.list-input:focus {
+  outline: none;
+}
+
+.check-row.done .list-input {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
 
 .list-add {
   display: flex;
@@ -537,7 +810,11 @@ svg {
   padding: 6px 10px 10px;
 }
 
-.editor-tools { display: flex; gap: 2px; flex-wrap: wrap; }
+.editor-tools {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
 
 /* ------------------------------------------------------------------ *
  * Misc                                                                *
@@ -556,6 +833,9 @@ svg {
   bottom: 24px;
   transform: translateX(-50%);
   z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 16px;
   padding: 12px 18px;
   border-radius: 8px;
   background: #323232;
@@ -564,10 +844,211 @@ svg {
   box-shadow: var(--shadow-lift);
 }
 
-@media (max-width: 720px) {
-  .topbar { padding: 8px 12px; }
-  .brand { margin-right: 10px; }
-  .brand-name { display: none; }
-  .viewbar { padding: 0 6px; }
-  .main { padding: 16px 8px 80px; }
+/* Light on the toast's own dark plate in either theme, so it is not styled
+   against --text. */
+.toast-action {
+  border: none;
+  background: none;
+  color: #8ab4f8;
+  font: inherit;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.toast-action:hover {
+  color: #aecbfa;
+}
+
+/* ---------------------------------------------------------------- *
+ * Attachments                                                       *
+ * ---------------------------------------------------------------- */
+
+/* Images bleed to the card's edges, cancelling its padding, and sit above the
+   title. The aspect ratio is fixed on purpose: the masonry measures card
+   heights as it lays them out, so a thumbnail whose height is only known once
+   the image has loaded would leave the grid overlapping until something
+   triggered a relayout. Cropping the preview is the price; the editor shows the
+   whole image. */
+.card-images {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  margin: -14px -16px 0;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+}
+
+.card-images img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  /* Something to look at while a slow image loads, rather than the page showing
+     through a hole in the card. */
+  background: var(--surface-2);
+}
+
+.card-images.count-2,
+.card-images.count-3,
+.card-images.count-4 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.card-images.count-2 img,
+.card-images.count-4 img {
+  aspect-ratio: 1 / 1;
+}
+
+/* An odd one out reads better as a banner over the pair below it. */
+.card-images.count-3 img:first-child {
+  grid-column: span 2;
+  aspect-ratio: 2 / 1;
+}
+
+.card-images.count-3 img:not(:first-child) {
+  aspect-ratio: 1 / 1;
+}
+
+.card-images-more {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.editor-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 14px 0;
+}
+
+.attachment {
+  position: relative;
+  line-height: 0;
+}
+
+/* Natural proportions here, unlike on a card: this is where the image is
+   actually looked at. */
+.attachment img {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+
+.attachment-file {
+  display: inline-block;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.attachment-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+
+.attachment:hover .attachment-remove,
+.attachment-remove:focus-visible {
+  opacity: 1;
+}
+
+.attachment-remove svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* Stands in for an image being uploaded, so the strip reacts the instant a file
+   is dropped instead of after the round trip. */
+.attachment-pending {
+  width: 120px;
+  height: 90px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  animation: attachment-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes attachment-pulse {
+
+  0%,
+  100% {
+    opacity: .45;
+  }
+
+  50% {
+    opacity: .9;
+  }
+}
+
+.editor.dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: -4px;
+}
+
+/* 720 × --ui-zoom. Media queries are matched against the real viewport, which is
+   outside the zoomed subtree, so the breakpoint has to be scaled by hand to fall
+   where the bar actually runs out of room. Under real browser zoom the viewport
+   itself shrinks and this happens for free. */
+@media (max-width: 792px) {
+  .topbar-inner {
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  .brand-name {
+    display: none;
+  }
+
+  /* Only the icons survive; the bar has no room for three labels plus a field. */
+  .view-tab {
+    padding: 7px 10px;
+  }
+
+  .view-tab span {
+    display: none;
+  }
+
+  .search {
+    flex: 1 1 120px;
+  }
+
+  .main {
+    padding: 16px 8px 80px;
+  }
+
+  .trash-bar {
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
 }

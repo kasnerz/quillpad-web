@@ -2,6 +2,8 @@
 // meaningful to the phone if it ever learns to sync colours. The hex values
 // live in style.css as --note-<name> custom properties, one pair per theme.
 
+import { uiScale } from "./zoom.js";
+
 export const COLORS = [
   "Default", "Red", "Orange", "Yellow", "Green", "Teal",
   "Cyan", "Blue", "Purple", "Pink", "Brown", "Gray",
@@ -49,15 +51,19 @@ export function openPalette(anchor, current, onPick) {
   document.body.appendChild(menu);
 
   // Positioned in viewport coordinates, then nudged back inside the window if
-  // the anchor sits near an edge.
+  // the anchor sits near an edge. The anchor's rect and innerWidth are client
+  // px; left/top and offsetWidth are the menu's own, so the zoom divides out of
+  // the first pair to put everything in one space. See js/zoom.js.
+  const scale = uiScale();
   const rect = anchor.getBoundingClientRect();
+  const viewport = window.innerWidth / scale;
   const width = menu.offsetWidth;
   const height = menu.offsetHeight;
-  let left = rect.left + rect.width / 2 - width / 2;
-  let top = rect.top - height - 8;
+  let left = (rect.left + rect.width / 2) / scale - width / 2;
+  let top = rect.top / scale - height - 8;
 
-  left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
-  if (top < 8) top = rect.bottom + 8;
+  left = Math.max(8, Math.min(left, viewport - width - 8));
+  if (top < 8) top = rect.bottom / scale + 8;
 
   menu.style.left = `${left}px`;
   menu.style.top = `${top}px`;

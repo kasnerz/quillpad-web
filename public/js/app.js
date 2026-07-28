@@ -4,12 +4,15 @@ import { MasonryGrid } from "./layout.js";
 import { renderCard } from "./card.js";
 import * as editor from "./editor.js";
 import { closePalette } from "./palette.js";
+import { initTheme } from "./theme.js";
 
 const SAFETY_POLL_MS = 60000;
 
 let view = "notes";
 let query = "";
 
+const composer = document.getElementById("composer");
+const trashBar = document.getElementById("trash-bar");
 const sectionPinned = document.getElementById("section-pinned");
 const sectionOthers = document.getElementById("section-others");
 const othersLabel = document.getElementById("others-label");
@@ -31,11 +34,27 @@ const handlers = {
   onPatch: (id, fields) => {
     store.patch(id, fields).catch((err) => toast(`Could not save: ${err.message}`));
   },
+  // No confirmation dialogue: the note goes to the trash, which is undoable for
+  // a week, so asking first would only be in the way.
   onDelete: (id) => {
-    if (!confirm("Delete this note?")) return;
-    store.remove(id).catch((err) => toast(`Could not delete: ${err.message}`));
+    store
+      .trash(id)
+      .then((note) => note && offerUndo(id))
+      .catch((err) => toast(`Could not delete: ${err.message}`));
+  },
+  onRestore: (id) => {
+    store.restore(id).catch((err) => toast(`Could not restore: ${err.message}`));
+  },
+  onDestroy: (id) => {
+    // The one deletion that cannot be taken back, so this one does ask.
+    if (!confirm("Delete this note forever?")) return;
+    store.destroy(id).catch((err) => toast(`Could not delete: ${err.message}`));
   },
 };
+
+function offerUndo(id) {
+  toast("Note moved to the trash", { label: "Undo", onClick: () => handlers.onRestore(id) });
+}
 
 /* ---------------------------------------------------------------- *
  * Rendering                                                         *
@@ -43,7 +62,10 @@ const handlers = {
 
 function visibleNotes() {
   const needle = query.trim().toLowerCase();
-  let notes = store.all().filter((note) => !!note.archived === (view === "archive"));
+  const trash = view === "trash";
+  let notes = trash
+    ? store.allTrashed().slice()
+    : store.all().filter((note) => !!note.archived === (view === "archive"));
 
   if (needle) {
     notes = notes.filter((note) =>
@@ -51,7 +73,11 @@ function visibleNotes() {
     );
   }
 
-  return notes.sort((a, b) => a.position - b.position || a.id - b.id);
+  // The trash has no manual order to respect — most recently thrown away first
+  // is what someone looking for what they just deleted wants.
+  return trash
+    ? notes.sort((a, b) => b.deleted - a.deleted || b.id - a.id)
+    : notes.sort((a, b) => a.position - b.position || a.id - b.id);
 }
 
 function render() {
@@ -60,9 +86,17 @@ function render() {
   if (gridPinned.dragging || gridOthers.dragging) return;
 
   const notes = visibleNotes();
-  // Archive is a flat list; pinning only structures the main view, as in Keep.
+  // Archive and trash are flat lists; pinning only structures the main view, as
+  // in Keep.
   const pinned = view === "notes" ? notes.filter((n) => n.favorite) : [];
   const others = view === "notes" ? notes.filter((n) => !n.favorite) : notes;
+
+  // Nothing in the trash can be written to, so neither the composer nor
+  // drag-to-reorder has anything to act on there.
+  composer.hidden = view === "trash";
+  trashBar.hidden = view !== "trash" || !store.allTrashed().length;
+  gridPinned.locked = view === "trash";
+  gridOthers.locked = view === "trash";
 
   // Visibility has to be settled *before* laying out: a hidden section has a
   // clientWidth of 0, so the grid would bail out of positioning and the cards
@@ -80,6 +114,8 @@ function render() {
       ? "No notes match your search."
       : view === "archive"
       ? "Nothing archived."
+      : view === "trash"
+      ? "The trash is empty."
       : "Notes you add appear here.";
   }
 }
@@ -145,12 +181,23 @@ for (const button of document.querySelectorAll(".view-tab")) {
   });
 }
 
+document.getElementById("empty-trash").addEventListener("click", () => {
+  const count = store.allTrashed().length;
+  if (!count) return;
+  if (!confirm(`Delete ${count === 1 ? "this note" : `all ${count} notes`} forever?`)) return;
+  store.emptyTrash().catch((err) => toast(`Could not empty the trash: ${err.message}`));
+});
+
 document.getElementById("search-input").addEventListener("input", (event) => {
   query = event.target.value;
   render();
 });
 
+initTheme(document.getElementById("theme-btn"));
+
 editor.setOnClosed(render);
+editor.setOnTrashed(offerUndo);
+editor.setOnError(toast);
 
 let resizeTimer = null;
 window.addEventListener("resize", () => {
@@ -159,12 +206,34 @@ window.addEventListener("resize", () => {
   closePalette();
 });
 
-function toast(message) {
+// One toast at a time: deleting three notes in a row should leave the undo for
+// the third on screen, not a stack of three.
+let currentToast = null;
+
+function toast(message, action) {
+  if (currentToast) currentToast.remove();
+
   const el = document.createElement("div");
   el.className = "toast";
-  el.textContent = message;
+  el.append(message);
+
+  if (action) {
+    const button = document.createElement("button");
+    button.className = "toast-action";
+    button.textContent = action.label;
+    button.addEventListener("click", () => {
+      el.remove();
+      action.onClick();
+    });
+    el.appendChild(button);
+  }
+
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  currentToast = el;
+  setTimeout(() => {
+    el.remove();
+    if (currentToast === el) currentToast = null;
+  }, 4000);
 }
 
 /* ---------------------------------------------------------------- *

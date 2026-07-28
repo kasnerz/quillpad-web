@@ -37,9 +37,47 @@ export const createNote = (fields) =>
 export const updateNote = (id, fields) =>
   request("PUT", `${API}/${id}`, { id, ...fields, modified: nowSeconds() });
 
+// Permanent: this is "delete forever" from inside the trash. Trashing and
+// restoring are ordinary updates that set or clear `deleted`.
 export const deleteNote = (id) => request("DELETE", `${API}/${id}`);
 
 export const reorderNotes = (ids) => request("PUT", `${WEB}/order`, { ids });
+
+// The notes listing withholds trashed notes, so that the phone drops its copy
+// the moment one is thrown away. They are read back through here instead.
+export const listTrash = () => request("GET", WEB + "/trash");
+
+export const emptyTrash = () => request("DELETE", WEB + "/trash");
+
+/* ---------------------------------------------------------------- *
+ * Attachments                                                       *
+ * ---------------------------------------------------------------- */
+
+// Files are addressed by the sha256 of their content, so the bytes behind this
+// URL can never change and the browser may cache it forever — which is what
+// keeps the grid from refetching every image on every render.
+export const attachmentUrl = (hash) => `${WEB}/attachments/${hash}`;
+
+// The raw file is the entire request body: no multipart envelope, because there
+// is nothing to send alongside it. Replies with { hash, mime, size }; the hash
+// is what goes on the note.
+export async function uploadAttachment(file) {
+  const res = await fetch(`${WEB}/attachments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "X-Client-Id": CLIENT_ID,
+    },
+    body: file,
+  });
+  if (!res.ok) {
+    const name = file.name || "file";
+    if (res.status === 415) throw new Error(`${name} is not an image`);
+    if (res.status === 413) throw new Error(`${name} is too large`);
+    throw new Error(`Could not upload ${name} (${res.status})`);
+  }
+  return res.json();
+}
 
 // Live change stream. Every write goes through the same server handlers no
 // matter which client made it, so a Quillpad sync from the phone shows up here
