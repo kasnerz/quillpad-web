@@ -40,6 +40,9 @@ let items = []; // checklist rows, when noteType === "list"
 // editor shows something the moment a file is dropped rather than after the
 // round trip.
 let uploading = [];
+// Whether the note already had nothing in it when it was opened. Only a note
+// emptied out *here* is discarded on close — see close().
+let openedBlank = false;
 let saveTimer = null;
 let onClosed = () => {};
 let onTrashed = () => {};
@@ -64,6 +67,7 @@ export function openNote(note, options = {}) {
   saved = snapshot();
   items = draft.noteType === "list" ? parseChecklist(draft.content) : [];
   uploading = [];
+  openedBlank = isBlank();
 
   overlay.hidden = false;
   syncFromDraft();
@@ -345,6 +349,9 @@ export async function flush() {
       attachments: draft.attachments,
     });
     draft.id = created.id;
+    // Written here, from something this session typed, so emptying it again
+    // before closing is a discard rather than the "leave it alone" case above.
+    openedBlank = false;
     saved = snapshot();
     deleteBtn.hidden = false;
     return;
@@ -367,7 +374,14 @@ export async function close() {
   // A note emptied out completely goes to the trash rather than being left
   // blank, matching Keep and keeping the phone's list clean. The trash is where
   // it can be fished back out of if that was a mistake.
-  if (draft.id && isBlank()) {
+  //
+  // Only when it was emptied *here*, though. A note that already looked blank
+  // when it was opened is not junk this app gets to judge — it may be a note
+  // whose content lives somewhere this app cannot see, and trashing it takes it
+  // off the sync listing, which tells the phone to bin the copy it holds. That
+  // is a real way to lose the only copy of something, so opening a note and
+  // closing it again must never delete it.
+  if (draft.id && isBlank() && !openedBlank) {
     try {
       await store.trash(draft.id);
     } catch (err) {
