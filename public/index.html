@@ -7,7 +7,7 @@
 <title>Quillpad</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-512.png">
-<meta name="theme-color" id="theme-color" content="#e7efd8">
+<meta name="theme-color" id="theme-color" content="#f2f5ed">
 
 <!-- Inline and blocking on purpose. js/theme.js owns the theme, but it is a
      module, so it runs after the document is parsed — by which time a dark page
@@ -20,7 +20,7 @@
   var dark = stored === "dark" || (stored !== "light" &&
     matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
-  document.getElementById("theme-color").content = dark ? "#2a3421" : "#e7efd8";
+  document.getElementById("theme-color").content = dark ? "#151a11" : "#f2f5ed";
 })();
 </script>
 

@@ -55,7 +55,7 @@ function apply() {
   // values are --topbar-bg, duplicated because the address bar continues the
   // top bar visually and should match the band, not the page.
   const meta = document.getElementById("theme-color");
-  if (meta) meta.content = theme === "dark" ? "#2a3421" : "#e7efd8";
+  if (meta) meta.content = theme === "dark" ? "#151a11" : "#f2f5ed";
 
   if (button) {
     const next = theme === "dark" ? "light" : "dark";

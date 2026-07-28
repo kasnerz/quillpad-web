@@ -14,7 +14,7 @@
      interface at once. 1.1 is what a browser shows at 110% zoom. */
   --ui-zoom: 1.08;
 
-  --bg: #ffffff;
+  --bg: #f2f5ed;
   --surface: #ffffff;
   --surface-2: #f1f3f4;
   --text: #202124;
@@ -32,9 +32,9 @@
      sits on it (search field, hovered buttons) and has to stay legible against
      the band rather than against --bg. Also duplicated as a literal in
      js/theme.js, which paints the mobile address bar and cannot read a mix. */
-  --topbar-bg: #e7efd8;
-  --topbar-tint: color-mix(in srgb, var(--accent) 14%, transparent);
-  --topbar-border: color-mix(in srgb, var(--accent) 26%, transparent);
+  --topbar-bg: #f2f5ed;
+  --topbar-tint: color-mix(in srgb, var(--accent) 10%, transparent);
+  --topbar-border: color-mix(in srgb, var(--accent) 0%, transparent);
 
   /* Note colours. Names are Quillpad's NoteColor enum, so the values stay
      portable if the phone ever gains colour sync. */
@@ -55,7 +55,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #202124;
+  --bg: #151a11;
   --surface: #202124;
   --surface-2: #2d2e31;
   --text: #e8eaed;
@@ -66,9 +66,9 @@
   --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, .6), 0 8px 20px rgba(0, 0, 0, .4);
 
-  --topbar-bg: #2a3421;
-  --topbar-tint: color-mix(in srgb, var(--accent) 14%, transparent);
-  --topbar-border: color-mix(in srgb, var(--accent) 22%, transparent);
+  --topbar-bg: #151a11;
+  --topbar-tint: color-mix(in srgb, var(--accent) 10%, transparent);
+  --topbar-border: color-mix(in srgb, var(--accent) 0%, transparent);
 
   --note-default: #202124;
   --note-red: #5c2b29;
@@ -348,7 +348,7 @@ svg {
    bar was white — the pill now has to separate from a tinted band rather than
    from plain background, and the hover tint sits between the two. */
 .view-tab.active {
-  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--text);
 }
 
