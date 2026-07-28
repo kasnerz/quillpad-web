@@ -51,9 +51,11 @@ function apply() {
   document.documentElement.dataset.theme = theme;
 
   // The address bar on mobile is painted from this, so a forced theme has to
-  // move it too — which rules out the media-switched pair of static tags.
+  // move it too — which rules out the media-switched pair of static tags. The
+  // values are --topbar-bg, duplicated because the address bar continues the
+  // top bar visually and should match the band, not the page.
   const meta = document.getElementById("theme-color");
-  if (meta) meta.content = theme === "dark" ? "#202124" : "#ffffff";
+  if (meta) meta.content = theme === "dark" ? "#2a3421" : "#e7efd8";
 
   if (button) {
     const next = theme === "dark" ? "light" : "dark";
